@@ -1,191 +1,137 @@
 section .data
-    promptX db "Enter a value for X: ", 0
-    promptY db "Enter a value for Y: ", 0
-    format db "%f", 0
-    format3 db "Integer part: %d, Fractional part: %f", 10, 0
-    errorMsg db "Error: Division by zero is undefined.", 10, 0
-    formula1 db "Z = (X+Y)/(X-Y)", 10, 0
-    formula2 db "Z = - 1/X^3 + 3", 10, 0
-    formula3 db "Z = X - Y/X +1", 10, 0
-    formula4 db "Z = ((X+Y)/Y^2 - 1)*X", 10, 0
-    formula5 db "Z = (X-Y)/(XY+1)", 10, 0
+    input_format db "%d", 0
+    output_x_y db "x = %d, y = %d", 10, 0
+    formula1_desc db "Formula 1: Z = (X+Y)/(X-Y)", 10, 0
+    formula2_desc db "Formula 2: Z = -1/X^3 + 3", 10, 0
+    formula3_desc db "Formula 3: Z = X - Y/X + 1", 10, 0
+    output_format db "Result: Z = %lf", 10, 0
+    err_msg db "Error: division by zero.", 10, 0
+    division_by_zero_msg db "Division by zero error in formula", 10, 0
+    minus_one_double dq -1.0
+    three_double dq 3.0
 
 section .bss
     x resd 1
     y resd 1
-    z resd 1
-    intPart resd 1
-    fracPart resd 1
+    z resq 1
 
 section .text
-    extern printf, scanf
-    global main
+    global _start
 
-main:
-    ; Prompt for X
-    push promptX
-    call printf
-    add esp, 4
+extern printf
+extern scanf
+extern exit
 
-    ; Input X
+_start:
+    ; Считываем X
     push x
-    push format
+    push input_format
     call scanf
     add esp, 8
 
-    ; Prompt for Y
-    push promptY
-    call printf
-    add esp, 4
-
-    ; Input Y
+    ; Считываем Y
     push y
-    push format
+    push input_format
     call scanf
     add esp, 8
 
-    ; Calculate Z = (X+Y)/(X-Y)
-    fld dword [x]
-    fsub dword [y]
-    fldz
-    fucomip st0, st1
-    jz .division_by_zero
-    fld dword [x]
-    fadd dword [y]
-    fdivp st1, st0
-    fstp dword [z]
-
-    ; Print the formula and result
-    push formula1
-    call printf
-    add esp, 4
-    fld dword [z]
-    frndint
-    fistp dword [intPart]
-    fld dword [z]
-    fsub dword [intPart]
-    fstp dword [fracPart]
-    push dword [fracPart]
-    push dword [intPart]
-    push format3
+    ; Выводим введенные значения X и Y
+    mov eax, [x]
+    mov ebx, [y]
+    push ebx
+    push eax
+    push output_x_y
     call printf
     add esp, 12
 
-    ; Calculate Z = - 1/X^3 + 3
-    fld1
-    fld dword [x]
-    fmul st0, st0
-    fmul st0, st0
-    fdivp st1, st0
-    fchs
-    fld1
-    faddp st1, st0
-    fstp dword [z]
-
-    ; Print the formula and result
-    push formula2
+    ; ---- Формула 1 ----
+    push formula1_desc
     call printf
     add esp, 4
-    fld dword [z]
-    frndint
-    fistp dword [intPart]
-    fld dword [z]
-    fsub dword [intPart]
-    fstp dword [fracPart]
-    push dword [fracPart]
-    push dword [intPart]
-    push format3
+
+    mov eax, [x]
+    mov ebx, [y]
+    add eax, ebx
+    mov ecx, eax
+    mov eax, [x]
+    sub eax, ebx     ; X - Y
+    test eax, eax    ; Проверяем результат X-Y на ноль
+    jz division_by_zero_formula1
+    cvtsi2sd xmm1, eax ; Конвертируем (X-Y) в double
+    cvtsi2sd xmm0, ecx ; Конвертируем (X+Y) в double
+    divsd xmm0, xmm1   ; Делим: (X + Y) / (X - Y)
+    movq [z], xmm0     ; Сохраняем результат в z
+    ; Выводим результат для формулы 1
+    push dword [z+4]  ; Передаем старшую часть double
+    push dword [z]    ; Передаем младшую часть double
+    push output_format
     call printf
     add esp, 12
 
-    ; Calculate Z = X - Y/X +1
-    fld dword [x]
-    fld dword [y]
-    fdivr dword [x]
-    fsubr st1, st0
-    fld1
-    faddp st1, st0
-    fstp dword [z]
-
-    ; Print the formula and result
-    push formula3
+    ; ---- Формула 2 ----
+    push formula2_desc
     call printf
     add esp, 4
-    fld dword [z]
-    frndint
-    fistp dword [intPart]
-    fld dword [z]
-    fsub dword [intPart]
-    fstp dword [fracPart]
-    push dword [fracPart]
-    push dword [intPart]
-    push format3
+    mov eax, [x]
+    test eax, eax    ; Проверяем X на ноль
+    jz division_by_zero_formula2
+    imul eax, eax    ; X^2
+    imul eax, [x]    ; X^3
+    cvtsi2sd xmm0, eax
+    movq xmm1, [minus_one_double]
+    divsd xmm1, xmm0
+    addsd xmm1, [three_double]
+    movq [z], xmm1
+    ; Выводим результат для формулы 2
+    push dword [z+4]
+    push dword [z]
+    push output_format
     call printf
     add esp, 12
 
-    ; Calculate Z = ((X+Y)/Y^2 - 1)*X
-    fld dword [x]
-    fadd dword [y]
-    fld dword [y]
-    fmul st0, st0
-    fdivp st1, st0
-    fld1
-    fsubp st1, st0
-    fld dword [x]
-    fmul st0, st1
-    fstp dword [z]
-
-    ; Print the formula and result
-    push formula4
+    ; ---- Формула 3 ----
+    push formula3_desc
     call printf
     add esp, 4
-    fld dword [z]
-    frndint
-    fistp dword [intPart]
-    fld dword [z]
-    fsub dword [intPart]
-    fstp dword [fracPart]
-    push dword [fracPart]
-    push dword [intPart]
-    push format3
+    mov eax, [x]
+    test eax, eax
+    jz division_by_zero_formula3
+    mov eax, [y]
+    cdq
+    idiv dword [x]
+    sub [x], eax
+    add dword [x], 1
+    mov eax, [x]
+    cvtsi2sd xmm0, eax
+    movq [z], xmm0
+    ; Выводим результат для формулы 3
+    push dword [z+4]
+    push dword [z]
+    push output_format
     call printf
     add esp, 12
 
-    ; Calculate Z = (X-Y)/(XY+1)
-    fld dword [x]
-    fsub dword [y]
-    fld dword [x]
-    fmul dword [y]
-    fld1
-    faddp st1, st0
-    fdivp st1, st0
-    fstp dword [z]
+    jmp end_program
 
-    ; Print the formula and result
-    push formula5
+division_by_zero_formula1:
+    push err_msg
     call printf
     add esp, 4
-    fld dword [z]
-    frndint
-    fistp dword [intPart]
-    fld dword [z]
-    fsub dword [intPart]
-    fstp dword [fracPart]
-    push dword [fracPart]
-    push dword [intPart]
-    push format3
-    call printf
-    add esp, 12
+    jmp end_program
 
-    jmp .exit
-
-.division_by_zero:
-    push errorMsg
+division_by_zero_formula2:
+    push division_by_zero_msg
     call printf
     add esp, 4
+    jmp end_program
 
-.exit:
-    ; Exit
-    mov eax, 0x60
-    xor edi, edi
-    syscall
+division_by_zero_formula3:
+    push division_by_zero_msg
+    call printf
+    add esp, 4
+    jmp end_program
+
+end_program:
+    ; Завершение программы
+    push 0
+    call exit
