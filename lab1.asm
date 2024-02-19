@@ -104,28 +104,35 @@ formula3:
     call printf
     add esp, 4
 
-    mov eax, [x]
-    test eax, eax
-    jz division_by_zero_formula3
+    ;Y/X
     mov eax, [y]
     cdq
-    idiv dword [x]
-    sub [x], eax
-    add dword [x], 1
+    mov ebx, [x]
+    test ebx, ebx
+    jz division_by_zero_formula3
+    idiv ebx
+
+    push eax
+
     mov eax, [x]
+    pop ebx
+    sub eax, ebx        ; X - (Y/X)
+    add eax, 1          ; + 1
+
     cvtsi2sd xmm0, eax
     movq [z], xmm0
-    ; Выводим результат для формулы 3
+
+    ; Вывод результата
     push dword [z+4]
     push dword [z]
     push output_format
     call printf
     add esp, 12
-
     jmp formula4
 
+
 formula4:
-	; ---- Формула 4 ----
+    ; ---- Формула 4 ----
     push formula4_desc
     call printf
     add esp, 4
@@ -133,24 +140,30 @@ formula4:
     mov eax, [y]
     test eax, eax
     jz division_by_zero_formula4
-    imul eax, eax    ; Y^2
-    mov ebx, [x]
-    add ebx, [y]     ; X + Y
-    cvtsi2sd xmm1, eax ; Y^2 (converted to double)
-    cvtsi2sd xmm0, ebx ; (X+Y) (converted to double)
-    divsd xmm0, xmm1   ; (X + Y) / Y^2
-    subsd xmm0, xmm1   ; ((X+Y)/Y^2 - 1)
-    mov ebx, [x]
-    cvtsi2sd xmm1, ebx ; X (converted to double)
-    mulsd xmm0, xmm1   ; (((X+Y)/Y^2 - 1) * X)
-    movq [z], xmm0     ; Save result
-    ; Output the result for formula 4
+
+    ;Y^2
+    imul eax, eax    ; Y * Y
+    cvtsi2sd xmm1, eax
+
+    ;X + Y
+    mov eax, [x]
+    add eax, [y]
+    cvtsi2sd xmm0, eax
+    divsd xmm0, xmm1
+
+
+    movsd xmm1, [minus_one_double]
+    addsd xmm0, xmm1
+
+    cvtsi2sd xmm1, [x]
+    mulsd xmm0, xmm1
+
+    movq [z], xmm0
     push dword [z+4]
     push dword [z]
     push output_format
     call printf
     add esp, 12
-
     jmp formula5
 
 formula5:
@@ -165,11 +178,10 @@ formula5:
     add eax, 1       ; XY + 1
     mov ebx, [x]
     sub ebx, [y]     ; X - Y
-    cvtsi2sd xmm0, ebx ; (X-Y) (converted to double)
-    cvtsi2sd xmm1, eax ; (XY+1) (converted to double)
+    cvtsi2sd xmm0, ebx ; (X-Y)
+    cvtsi2sd xmm1, eax ; (XY+1)
     divsd xmm0, xmm1   ; (X-Y) / (XY+1)
-    movq [z], xmm0     ; Save result
-    ; Output the result for formula 5
+    movq [z], xmm0
     push dword [z+4]
     push dword [z]
     push output_format
