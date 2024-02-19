@@ -1,5 +1,8 @@
 section .data
     input_format db "%d", 0
+    enter_x_msg db "Enter value for X: ", 0
+    enter_y_msg db "Enter value for Y: ", 0
+    newline db 10, 0
     output_x_y db "x = %d, y = %d", 10, 0
     formula1_desc db "Formula 1: Z = (X+Y)/(X-Y)", 10, 0
     formula2_desc db "Formula 2: Z = -1/X^3 + 3", 10, 0
@@ -25,11 +28,20 @@ extern scanf
 extern exit
 
 _start:
+
+    push enter_x_msg
+    call printf
+    add esp, 4
+
     ; Считываем X
     push x
     push input_format
     call scanf
     add esp, 8
+
+    push enter_y_msg
+    call printf
+    add esp, 4
 
     ; Считываем Y
     push y
@@ -37,6 +49,10 @@ _start:
     call scanf
     add esp, 8
 
+    push newline
+    call printf
+    add esp, 4
+	
     ; Выводим введенные значения X и Y
     mov eax, [x]
     mov ebx, [y]
@@ -45,6 +61,11 @@ _start:
     push output_x_y
     call printf
     add esp, 12
+
+    push newline
+    call printf
+    add esp, 4
+
 
 formula1:
     ; ---- Формула 1 ----
@@ -71,6 +92,10 @@ formula1:
     call printf
     add esp, 12
 
+    push newline
+    call printf
+    add esp, 4
+
     jmp formula2
 
 formula2:
@@ -95,6 +120,11 @@ formula2:
     push output_format
     call printf
     add esp, 12
+
+    push newline
+    call printf
+    add esp, 4
+
 
     jmp formula3
 
@@ -128,6 +158,12 @@ formula3:
     push output_format
     call printf
     add esp, 12
+
+    push newline
+    call printf
+    add esp, 4
+
+    
     jmp formula4
 
 
@@ -164,6 +200,12 @@ formula4:
     push output_format
     call printf
     add esp, 12
+
+    push newline
+    call printf
+    add esp, 4
+
+    
     jmp formula5
 
 formula5:
@@ -187,6 +229,12 @@ formula5:
     push output_format
     call printf
     add esp, 12
+
+    push newline
+    call printf
+    add esp, 4
+
+    
     jmp end_program
 
 division_by_zero_formula1:
