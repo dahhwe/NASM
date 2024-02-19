@@ -134,23 +134,19 @@ formula3:
     call printf
     add esp, 4
 
-    ;Y/X
-    mov eax, [y]
-    cdq
-    mov ebx, [x]
-    test ebx, ebx
-    jz division_by_zero_formula3
-    idiv ebx
+    cvtsi2sd xmm0, dword [y]
+    cvtsi2sd xmm1, dword [x]
+    
+    divsd xmm0, xmm1
 
-    push eax
+    cvtsi2sd xmm1, dword [x]
+    subsd xmm1, xmm0   ; X - (Y/X)
 
-    mov eax, [x]
-    pop ebx
-    sub eax, ebx        ; X - (Y/X)
-    add eax, 1          ; + 1
-
+    mov eax, 1
     cvtsi2sd xmm0, eax
-    movq [z], xmm0
+    addsd xmm1, xmm0
+
+    movq [z], xmm1
 
     ; Вывод результата
     push dword [z+4]
@@ -162,7 +158,6 @@ formula3:
     push newline
     call printf
     add esp, 4
-
     
     jmp formula4
 
@@ -195,6 +190,8 @@ formula4:
     mulsd xmm0, xmm1
 
     movq [z], xmm0
+
+    ; Вывод результата
     push dword [z+4]
     push dword [z]
     push output_format
@@ -223,7 +220,10 @@ formula5:
     cvtsi2sd xmm0, ebx ; (X-Y)
     cvtsi2sd xmm1, eax ; (XY+1)
     divsd xmm0, xmm1   ; (X-Y) / (XY+1)
+
     movq [z], xmm0
+
+	; Вывод результата
     push dword [z+4]
     push dword [z]
     push output_format
