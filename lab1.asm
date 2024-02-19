@@ -44,6 +44,7 @@ _start:
     call printf
     add esp, 12
 
+formula1:
     ; ---- Формула 1 ----
     push formula1_desc
     call printf
@@ -67,7 +68,9 @@ _start:
     push output_format
     call printf
     add esp, 12
+    jmp formula2
 
+formula2:
     ; ---- Формула 2 ----
     push formula2_desc
     call printf
@@ -88,7 +91,9 @@ _start:
     push output_format
     call printf
     add esp, 12
+    jmp formula3
 
+formula3:
     ; ---- Формула 3 ----
     push formula3_desc
     call printf
@@ -117,13 +122,13 @@ division_by_zero_formula1:
     push err_msg
     call printf
     add esp, 4
-    jmp end_program
+    jmp formula2
 
 division_by_zero_formula2:
     push division_by_zero_msg
     call printf
     add esp, 4
-    jmp end_program
+    jmp formula3
 
 division_by_zero_formula3:
     push division_by_zero_msg
