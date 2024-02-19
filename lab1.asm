@@ -4,6 +4,8 @@ section .data
     formula1_desc db "Formula 1: Z = (X+Y)/(X-Y)", 10, 0
     formula2_desc db "Formula 2: Z = -1/X^3 + 3", 10, 0
     formula3_desc db "Formula 3: Z = X - Y/X + 1", 10, 0
+    formula4_desc db "Formula 4: Z = ((X+Y)/Y^2 - 1)*X", 10, 0
+    formula5_desc db "Formula 5: Z = (X-Y)/(XY+1)", 10, 0
     output_format db "Result: Z = %lf", 10, 0
     err_msg db "Error: division by zero.", 10, 0
     division_by_zero_msg db "Division by zero error in formula", 10, 0
@@ -68,6 +70,7 @@ formula1:
     push output_format
     call printf
     add esp, 12
+
     jmp formula2
 
 formula2:
@@ -75,6 +78,7 @@ formula2:
     push formula2_desc
     call printf
     add esp, 4
+
     mov eax, [x]
     test eax, eax    ; Проверяем X на ноль
     jz division_by_zero_formula2
@@ -91,6 +95,7 @@ formula2:
     push output_format
     call printf
     add esp, 12
+
     jmp formula3
 
 formula3:
@@ -98,6 +103,7 @@ formula3:
     push formula3_desc
     call printf
     add esp, 4
+
     mov eax, [x]
     test eax, eax
     jz division_by_zero_formula3
@@ -116,6 +122,59 @@ formula3:
     call printf
     add esp, 12
 
+    jmp formula4
+
+formula4:
+	; ---- Формула 4 ----
+    push formula4_desc
+    call printf
+    add esp, 4
+
+    mov eax, [y]
+    test eax, eax
+    jz division_by_zero_formula4
+    imul eax, eax    ; Y^2
+    mov ebx, [x]
+    add ebx, [y]     ; X + Y
+    cvtsi2sd xmm1, eax ; Y^2 (converted to double)
+    cvtsi2sd xmm0, ebx ; (X+Y) (converted to double)
+    divsd xmm0, xmm1   ; (X + Y) / Y^2
+    subsd xmm0, xmm1   ; ((X+Y)/Y^2 - 1)
+    mov ebx, [x]
+    cvtsi2sd xmm1, ebx ; X (converted to double)
+    mulsd xmm0, xmm1   ; (((X+Y)/Y^2 - 1) * X)
+    movq [z], xmm0     ; Save result
+    ; Output the result for formula 4
+    push dword [z+4]
+    push dword [z]
+    push output_format
+    call printf
+    add esp, 12
+
+    jmp formula5
+
+formula5:
+    ; ---- Формула 5 ----
+    push formula5_desc
+    call printf
+    add esp, 4
+
+    mov eax, [x]
+    mov ebx, [y]
+    imul eax, ebx    ; X * Y
+    add eax, 1       ; XY + 1
+    mov ebx, [x]
+    sub ebx, [y]     ; X - Y
+    cvtsi2sd xmm0, ebx ; (X-Y) (converted to double)
+    cvtsi2sd xmm1, eax ; (XY+1) (converted to double)
+    divsd xmm0, xmm1   ; (X-Y) / (XY+1)
+    movq [z], xmm0     ; Save result
+    ; Output the result for formula 5
+    push dword [z+4]
+    push dword [z]
+    push output_format
+    call printf
+    add esp, 12
     jmp end_program
 
 division_by_zero_formula1:
@@ -131,6 +190,18 @@ division_by_zero_formula2:
     jmp formula3
 
 division_by_zero_formula3:
+    push division_by_zero_msg
+    call printf
+    add esp, 4
+    jmp formula4
+
+division_by_zero_formula4:
+    push division_by_zero_msg
+    call printf
+    add esp, 4
+    jmp formula5
+
+division_by_zero_formula5:
     push division_by_zero_msg
     call printf
     add esp, 4
