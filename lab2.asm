@@ -1,111 +1,98 @@
 section .data
-    msg_x db "Enter X: ", 0
-    msg_a db "Enter A: ", 0
-    format_in db "%lf", 0
-    format_out db "Result: %lf", 10, 0
-	
-    ten dd 10.0
-    one dd 1.0
-    four dd 4.0
-    two dd 2.0
+    inputXMsg    db 'Enter value for X: ', 0
+    inputAMsg    db 'Enter value for A: ', 0
+    outputMsg    db 'X = %d, Y = %d', 10, 0
+    formatIn     db '%d', 0
 
 section .bss
-    x resd 1
-    a resd 1
-    y1 resd 1
-    y2 resd 1
-    result resd 1
+    x           resd 1
+    a           resd 1
+    y           resd 1
+    i           resd 1
+    current_x   resd 1
+    y1          resd 1
+    y2          resd 1
 
 section .text
-    extern printf, scanf
-    global _start
+    extern  printf, scanf
 
-print_message:
-    push eax
-    call printf
-    add esp, 4
-    ret
-
-read_float:
-    push eax
-    push ebx
-    call scanf
-    add esp, 8
-    ret
+global _start
 
 _start:
-    ; Prompt for X
-    push msg_x
-    call print_message
+    mov     eax, inputXMsg
+    push    eax
+    call    printf
+    add     esp, 4
+    
+    mov     eax, formatIn
+    push    x
+    push    eax
+    call    scanf
+    add     esp, 8
 
-    ; Read X
-	push format_in
-	push x
-	call scanf
-	add esp, 8
+    mov     eax, inputAMsg
+    push    eax
+    call    printf
+    add     esp, 4
+    
+    mov     eax, formatIn
+    push    a
+    push    eax
+    call    scanf
+    add     esp, 8
 
-    ; Prompt for A
-    push msg_a
-    call print_message
+    mov     dword [i], 0
+loop_start:
+    cmp     dword [i], 10
+    jge     loop_end
 
-    ; Read A
-    push a
-    push format_in
-    call read_float
+    mov     eax, [x]
+    add     eax, [i]
+    mov     [current_x], eax
 
-    ; Calculate Y1 based on X
-    fld dword [x]      ; Load X
-    fcomp dword [one]  ; Compare X with 1.0
-    fstsw ax           ; Store the comparison result
-    sahf
-    jbe _x_le_1        ; Jump if X <= 1
+    cmp     eax, 1
+    jle     less_than_one
+    add     eax, 10  ; y1 = 10 + current_x
+    jmp     y1_done
 
-    ; If X > 1
-    fld dword [x]
-    fadd dword [ten]   ; Y1 = X + 10
-    fstp dword [y1]
-    jmp _calc_y2
+less_than_one:
+    mov     edx, eax ; Move current_x to edx for abs calculation
+    or      edx, edx ; Check if edx is negative
+    jns     not_negative
+    neg     edx      ; Negate if negative
+not_negative:
+    add     edx, [a] ; y1 = |current_x| + a
+    mov     eax, edx
 
-_x_le_1:
-    ; If X <= 1
-    fld dword [x]
-    fabs               ; Y1 = |X|
-    fld dword [a]
-    fadd               ; Y1 = |X| + A
-    fstp dword [y1]
+y1_done:
+    mov     [y1], eax
 
-_calc_y2:
-    ; Calculate Y2 based on X
-    fld dword [x]
-    fcomp dword [four]
-    fstsw ax
-    sahf
-    jbe _x_le_4
+    mov     eax, [current_x]
+    cmp     eax, 4
+    jle     less_than_four
+    mov     eax, 2   ; y2 = 2
+    jmp     y2_done
 
-    ; If X > 4
-	mov eax, dword [two]  ; Move the value of 'two' into eax
-	mov [y2], eax         ; Move the value from eax into y2
-    jmp _calc_result
+less_than_four:
+    ; y2 = current_x is already in eax
 
-_x_le_4:
-    ; If X <= 4
-    fld dword [x]
-    fistp dword [y2]  ; Y2 = X
+y2_done:
+    mov     [y2], eax
+    mov     eax, [y1]
+    xor     edx, edx
+    div     dword [y2]
+    mov     [y], edx
 
-_calc_result:
-    fld dword [y1]
-    fist dword [result]
-    mov eax, [result]
-    cdq
-    idiv dword [y2]
-    mov [result], edx
+    push    dword [y]
+    push    dword [current_x]
+    push    outputMsg
+    call    printf
+    add     esp, 12
 
-    ; Print result
-    push dword [result]
-    push format_out
-    call printf
-    add esp, 8
+    inc     dword [i]
+    jmp     loop_start
 
-    ; Exit program
-    mov eax, 1
-    int 0x80
+loop_end:
+    mov     eax, 1
+    xor     ebx, ebx
+    int     0x80
