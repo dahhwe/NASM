@@ -75,6 +75,8 @@ skip_first_word:
         jmp .copy_loop
 
 .done:
+    mov byte [edi], 0xa
+    inc edi
     mov byte [edi], 0      
 
     mov eax, 4             
